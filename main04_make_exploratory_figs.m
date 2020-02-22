@@ -282,6 +282,9 @@ time_fluo_mean = nanmean(fluo_time_mat,2);
 time_fluo_ste = nanstd(fluo_time_mat,[],2);
 cm1 = brewermap([],'Set3');
 
+xmin = 2;
+xmax = 15;
+
 delta_time_fig = figure;
 yyaxis left
 e = errorbar(tt_index/60,time_delta_mean,time_delta_ste,'Color',cm1(5,:),'LineWidth',2);
@@ -299,7 +302,7 @@ hold on
 p = plot(0,0);
 ax = gca;
 ax.YColor = [.2 .2 .2];
-xlim([6 60])
+xlim([xmin xmax])
 ylabel([gene_name ' activity (au)'])
 legend('enrichment trend','activity trend', 'Location','northeast')
 xlabel('minutes')
@@ -315,7 +318,7 @@ ylabel([protein_name ' enrichment at locus (au)'])
 grid on
 StandardFigure(e,gca);
 xlabel('minutes')
-xlim([6 60])
+xlim([xmin xmax])
 saveas(delta_time_fig, [FigPath write_string '_temporal_enrichment.png'])
 
 
@@ -333,13 +336,13 @@ hold on
 p = plot(0,0);
 ax = gca;
 ax.YColor = cm1(9,:);
-xlim([6 60])
+xlim([xmin xmax])
 ylabel([gene_name ' activity (au)'])
 
 legend('background trend','activity trend', 'Location','northeast')
 StandardFigure(p,gca);
 xlabel('minutes')
-xlim([6 60])
+xlim([xmin xmax])
 saveas(null_time_fig, [FigPath write_string '_temporal_background_w_fluo.png'])
 
 %%
@@ -488,7 +491,7 @@ e.CapSize = 0;
 s = plot(tt_index/60,pd3_delta_vec,'-','LineWidth',1.5,'Color',cm2(10,:));
 ylabel([protein_name ' enrichment at locus (au)'])
 grid on
-xlim([6 60])
+xlim([xmin xmax])
 xlabel('minutes')
 % title(['Enrichment of ' id_string])
 box on

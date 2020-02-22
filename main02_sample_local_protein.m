@@ -23,6 +23,7 @@
 % OUTPUT: nucleus_struct_protein: compiled data set with protein samples
 
 function nucleus_struct_protein = main02_sample_local_protein(project,DropboxFolder,varargin)
+
 addpath('./utilities')
 ROIRadiusSpot = .2; % radus (um) of region used to query and compare TF concentrations
 minSampleSepUm = 1.5; %um
@@ -34,7 +35,11 @@ use_psf_fit_dims = false; % if true, use fits from PSF fitting
 xy_sigma_um = 0.25;% um 
 z_sigma_um = 0.6; % um
 ignoreQC = false;
-rawPath = 'E:\LocalEnrichment\Data\PreProcessedData\';
+
+% rawPath = 'E:\LocalEnrichment\Data\PreProcessedData\';
+pth = getDorsalFolders;
+rawPath = [pth, filesep, 'PreProcessedData\'];
+
 proteinChannel = 1;
 [~, DataPath, ~] =   header_function(DropboxFolder, project);
 

@@ -5,7 +5,9 @@ close all
 addpath('./utilities')
 
 [~, DataPath, ~] =   header_function(DropboxFolder, project);
-rawPath = 'E:\LocalEnrichment\Data\PreProcessedData\';
+% rawPath = 'E:\LocalEnrichment\Data\PreProcessedData\';
+pth = getDorsalFolders;
+rawPath = [pth, filesep, 'PreProcessedData\'];
 % sampling parameters
 n_spots = 1000;
 mcp_channel = 2;

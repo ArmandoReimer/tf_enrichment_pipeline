@@ -68,13 +68,12 @@ prefix_cell_raw = sheet_cell(prefix_ft,2:end);
 prefix_cell = {};
 for i = 1:numel(prefix_cell_raw)
     if ~isempty(prefix_cell_raw{i})
-%         try
-%             eval([prefix_cell_raw{i} ';'])
-%             prefix_cell = [prefix_cell{:} {Prefix}];
-%         catch
-            strs = strsplit(prefix_cell_raw{i}, '''');
-            prefix_cell = [prefix_cell strs{2}];
-%         end
+        eval([prefix_cell_raw{i} ';'])
+        try
+            prefix_cell = [prefix_cell{:} {Prefix}];
+        catch
+            prefix_cell = [prefix_cell{:} {prefix}];
+        end
     end
 end
     
@@ -132,15 +131,15 @@ for i = 1:length(cp_filenames)
     threeD_flag = isfield(cp_particles,'Fluo3DRaw');        
     % determine whether there is AP info
     ap_flag = isfield(cp_particles, 'APpos');
-    ap_flag = false;    
+        
     % set identifier
     setID = i;            
     % pull trace, time, and frame variables
     time_raw = processed_data.ElapsedTime*60; % time vector   
-    if isempty(processed_data.AllTracesVector) & ~isempty(processed_data.CompiledParticles{1})
+    if ~exist()
         AllTracesVector = {};
         AllTracesVector{1} =...
-            createAllTracesVector(FrameInfo, processed_data.CompiledParticles{1},'NoAP');
+            createAllTracesVector(FrameInfo,CompiledParticles{1},'NoAP');
         processed_data.AllTracesVector = AllTracesVector{1};
     end
     traces_raw = processed_data.AllTracesVector; % array with a column for each trace 
