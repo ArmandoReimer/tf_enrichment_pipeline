@@ -292,10 +292,11 @@ for i = 1:size(set_frame_array,1)
 
     
     %determine protein channel
-    [~,~,~,~, ~, ~, ~, ~,Channel1,Channel2,~,Channel3, ~, ~, ~] = readMovieDatabase(src); 
+    [~,~,~,~, ~, ~, ~, ~,Channel1,Channel2,~,Channel3, ~, ~, ~] = readMovieDatabase(src);
+
     Channels = {Channel1{1},Channel2{1}, Channel3{1}};
     proteinChannel = find(contains(Channels, 'input', 'IgnoreCase', true));
-    mcp_channel = find(contains(Channels, 'spot', 'IgnoreCase', true)| contains(Channels, 'mcp', 'IgnoreCase', true) | contains(Channels, 'pcp', 'IgnoreCase', true)) ;
+
     
     % load stacks    
     mcp_stack = load_stacks(rawPath, src, frame, mcp_channel);

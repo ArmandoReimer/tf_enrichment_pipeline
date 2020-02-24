@@ -81,7 +81,7 @@ end
 % make filepath
 mkdir(DataPath);
 % assign save names
-nucleus_name = [DataPath 'nucleus_struct.mat']; % names for compiled elipse struct
+nucleus_name = [DataPath 'nucleus_struct.mat']; % names for compiled ellipse struct
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%% Obtain Relevant Filepaths %%%%%%%%%%%%%%%%%%%%%%%
