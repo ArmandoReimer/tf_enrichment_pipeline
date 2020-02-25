@@ -1,6 +1,6 @@
 function segmentNuclei_main02(yDim, xDim, segment_indices, set_frame_array, set_ref, frame_ref, nc_x_ref, ...
     nc_y_ref, master_ind_ref, spot_x_ref, spot_y_ref, set_key, rawPath, proteinChannel, ...
-    sm_kernel, nb_size, refPath, display_figures, min_area, max_area)
+    sm_kernel, nb_size, refPath, display_figures, min_area, max_area, DropboxFolder)
 
 nSets = size(set_key, 1);
 nuclear_mov = cell(1, nSets);
@@ -8,7 +8,12 @@ nuclear_mov = cell(1, nSets);
  for set = 1:nSets
     prefix = cell2mat(set_key{set, 2});
     movPath = [rawPath, prefix, filesep, prefix, '_hisMat.mat'];
-    load(movPath, 'hisMat'); % t y x set
+    if exist(movPath, 'file')
+        load(movPath, 'hisMat'); % t y x set
+    else
+        load([DropboxFolder, filesep, prefix, filesep, 'FrameInfo.mat'], 'FrameInfo')
+         nWorkers = 1; [~, hisMat, ~, ~, ~] = makeMovieMats(prefix, rawPath, nWorkers, FrameInfo);
+    end
     nuclear_mov{set} = double(hisMat); % {set(t y x)}
  end
  clear hisMat;
@@ -92,39 +97,36 @@ nuclear_mov = cell(1, nSets);
         % label regions
         nc_frame_labels = logical(protein_bin_clean);         
         
-        %%%%%%%%%%%%%diagnostic display
-        if display_figures
-            figure(2)
-            imagesc(nc_frame_labels)
-        end
-        %%%%%%%%%%%%%%%%%%%%%
         
         % frame info
         nc_lin_indices = sub2ind(size(protein_bin_clean),round(nc_y_vec_u),round(nc_x_vec_u));
         % take convex hull
         stats = regionprops(nc_frame_labels,'ConvexHull');
+%         nc_frame_labels = imfill(nc_frame_labels, 'holes');
         nc_ref_frame = zeros(size(nc_frame_labels)); 
-        for j = 2:numel(stats)
+        maskTotal = zeros(yDim, xDim); %for diagnostics
+        for j = 1:numel(stats)
             hull_points = stats(j).ConvexHull;
             mask = poly2mask(hull_points(:,1),hull_points(:,2),yDim,xDim);  
             
-            mask = bwareafilt(mask, [min_area, max_area]); %throw out small oversegmentation products
-
-            %%%%%%%%%%%%%diagnostic display
-
-            if display_figures
-                figure(5)
-                imagesc(mask)
-                pause(.1)
-            end
-            
-             %%%%%%%%%%%%%
+           mask = bwareafilt(mask, [min_area, max_area]); %throw out small oversegmentation products
+                        
+            maskTotal = maskTotal + mask;
              
             nc_bin_ids = mask(nc_lin_indices);
             if sum(nc_bin_ids) == 1 % enforce unique
                 nc_ref_frame(mask) = nc_master_vec_u(nc_bin_ids);
             end
-        end       
+        end
+        
+          %%%%%%%%%%%%%diagnostic display
+            if display_figures
+                figure(5)
+                imagesc(maskTotal)
+            end
+             %%%%%%%%%%%%%
+             
+        
         % generate array indicating distance of each pixel from an active locus 
         nc_indices = sub2ind(size(nc_ref_frame),spot_y_vec,spot_x_vec);
         spot_dist_frame_temp = zeros(size(nc_ref_frame));

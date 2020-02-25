@@ -38,7 +38,7 @@ xy_sigma_um = 0.25;% um
 z_sigma_um = 0.6; % um
 ignoreQC = false;
 min_rad_um = 2; % set min and max acceptable area for nucleus segmentation
-max_rad_um = 4;
+max_rad_um = 4; %this needs to be 6um for nc12. 4um for nc14
 sm_kernel_um = 1; % size of gaussian smoothing kernel 
 nb_size_um = 10; % determine size of neighborhood to use
 pt_snippet_size_um = 1.5; % set snippet to be 3um in size
@@ -242,7 +242,7 @@ if segmentNuclei
     
    segmentNuclei_main02(yDim, xDim, segment_indices, set_frame_array, set_ref, frame_ref, nc_x_ref, ...
     nc_y_ref, master_ind_ref, spot_x_ref, spot_y_ref, set_key, rawPath, proteinChannel, ...
-    sm_kernel, nb_size, refPath, display_figures, min_area, max_area)
+    sm_kernel, nb_size, refPath, display_figures, min_area, max_area, DropboxFolder)
 
 end
 

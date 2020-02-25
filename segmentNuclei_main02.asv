@@ -1,6 +1,6 @@
 function segmentNuclei_main02(yDim, xDim, segment_indices, set_frame_array, set_ref, frame_ref, nc_x_ref, ...
     nc_y_ref, master_ind_ref, spot_x_ref, spot_y_ref, set_key, rawPath, proteinChannel, ...
-    sm_kernel, nb_size, refPath, display_figures, min_area)
+    sm_kernel, nb_size, refPath, display_figures, min_area, max_area)
 
 nSets = size(set_key, 1);
 nuclear_mov = cell(1, nSets);
@@ -106,18 +106,16 @@ nuclear_mov = cell(1, nSets);
         nc_ref_frame = zeros(size(nc_frame_labels)); 
         for j = 2:numel(stats)
             hull_points = stats(j).ConvexHull;
-            mask = poly2mask(hull_points(:,1),hull_points(:,2),yDim,xDim);   
-            minArea = 
-            stats2 = bwareaopen(mask, minArea);
+            mask = poly2mask(hull_points(:,1),hull_points(:,2),yDim,xDim);  
             
-            %%%%%%%%%%%%%diagnostic display
+            mask = bwareafilt(mask, [min_area, max_area]); %throw out small oversegmentation products
 
+            %%%%%%%%%%%%%diagnostic display
             if display_figures
                 figure(5)
                 imagesc(mask)
                 pause(.1)
             end
-            
              %%%%%%%%%%%%%
              
             nc_bin_ids = mask(nc_lin_indices);
