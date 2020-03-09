@@ -7,9 +7,10 @@ nuclear_mov = cell(1, nSets);
  
  for set = 1:nSets
     prefix = cell2mat(set_key{set, 2});
-    movPath = [rawPath, prefix, filesep, prefix, '_hisMat.mat'];
-    if exist(movPath, 'file')
-        load(movPath, 'hisMat'); % t y x set
+    hisPath = [rawPath, prefix, filesep, prefix, '_hisMat.mat'];
+    if exist(hisPath, 'file')
+%         load(hisPath, 'hisMat'); % t y x set
+        hisMat = loadHisMat(hisPath);
     else
         load([DropboxFolder, filesep, prefix, filesep, 'FrameInfo.mat'], 'FrameInfo')
          nWorkers = 1; [~, hisMat, ~, ~, ~] = makeMovieMats(prefix, rawPath, nWorkers, FrameInfo);
@@ -50,7 +51,7 @@ nuclear_mov = cell(1, nSets);
 %         nuclear_stack = load_stacks(rawPath, src, frame_temp, proteinChannel);
 %         nuclear_image = mean(nuclear_stack, 3);
 
-        nuclear_image = squeeze(nuclear_mov{setID_temp}(frame_temp, :, :));
+        nuclear_image = nuclear_mov{setID_temp}(:, :, frame_temp);
         
           if display_figures
             figure(1)
