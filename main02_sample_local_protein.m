@@ -34,7 +34,7 @@ ROIRadiusSpot = .2; % radius (um) of region used to query and compare TF concent
 minSampleSepUm = 1.5; %um
 mf_samp_rad = 0.8; % distance (um) from nucleus center to include in sample
 minEdgeSepUm = .5; %um
-segmentNuclei = 0;
+shouldSegmentNuclei = 0;
 % PSF info for 3D sampling
 use_psf_fit_dims = false; % if true, use fits from PSF fitting
 xy_sigma_um = 0.25;% um
@@ -269,7 +269,7 @@ for i = 1:size(setFrameArray,1)
     spotReferenceFile = [refPath 'spot_roi_frame_set' sprintf('%02d',setID_temp) '_frame' sprintf('%03d',frame_temp) '.mat'];
     spotFrameVector(i) = isfile(spotReferenceFile);
 end
-if all(spot_frame_vec) && segmentNuclei && ~askToOverwrite
+if all(spotFrameVector) && shouldSegmentNuclei && ~askToOverwrite
     warning('previous segmentation results found')
     y = 1;
     n = 0;
@@ -278,14 +278,14 @@ if all(spot_frame_vec) && segmentNuclei && ~askToOverwrite
     else
         overwrite = 'y';
     end
-    segmentNuclei = overwrite;
-elseif ~all(nucleusFrameVector) && ~segmentNuclei
+    shouldSegmentNuclei = overwrite;
+elseif ~all(nucleusFrameVector) && ~shouldSegmentNuclei
     warning('some or all frames missing nucleus segmentation data. Segmenting missing frames only')
-    segmentNuclei = 1;
+    shouldSegmentNuclei = 1;
     segment_indices = find(~nucleusFrameVector);
 end
 
-if segmentNuclei
+if shouldSegmentNuclei
     
     nSets = size(set_key, 1);
     nuclear_mov = cell(1, nSets);
@@ -368,14 +368,14 @@ for i = 1:size(setFrameArray,1)
     % generate lookup table of inter-nucleus distances
     xInterNuclearDistanceMatrix = repmat(nucleusXVector,numel(nucleusXVector),1)-repmat(nucleusXVector',1,numel(nucleusXVector));
     yInterNuclearDistanceMatrix = repmat(nucleusYVector,numel(nucleusYVector),1)-repmat(nucleusYVector',1,numel(nucleusYVector));
-    interNuclearDisplacementMatrix = sqrt(double(x_dist_mat).^2 + double(yInterNuclearDistanceMatrix).^2);
+    interNuclearDisplacementMatrix = sqrt(double(xInterNuclearDistanceMatrix).^2 + double(yInterNuclearDistanceMatrix).^2);
     
     % initialize arrays to store relevant info
     for j = 1:numel(newVectorFields)
         eval([newVectorFields{j} ' = NaN(size(spot_x_vec));']);
     end
     for j = 1:numel(newSnippetFields)
-        eval([newSnippetFields{j} ' = NaN(2*pt_snippet_size+1,2*pt_snippet_size+1,numel(spot_x_vec));']);
+        eval([newSnippetFields{j} ' = NaN(2*proteinSnippetSize_px+1,2*proteinSnippetSize_px+1,numel(spot_x_vec));']);
     end
     
     % iterate through spots
