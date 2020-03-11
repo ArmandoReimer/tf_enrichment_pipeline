@@ -269,14 +269,14 @@ for i = 1:size(setFrameArray,1)
     spotReferenceFile = [refPath 'spot_roi_frame_set' sprintf('%02d',setID_temp) '_frame' sprintf('%03d',frame_temp) '.mat'];
     spotFrameVector(i) = isfile(spotReferenceFile);
 end
-if all(spotFrameVector) && shouldSegmentNuclei && ~askToOverwrite
+if all(spotFrameVector) && shouldSegmentNuclei
     warning('previous segmentation results found')
     y = 1;
     n = 0;
     if askToOverwrite
         overwrite = input('overwrite segmentation results? (y/n)');
     else
-        overwrite = 'y';
+        overwrite = y;
     end
     shouldSegmentNuclei = overwrite;
 elseif ~all(nucleusFrameVector) && ~shouldSegmentNuclei
