@@ -1,7 +1,10 @@
 function segmentNuclei_main02(yDim, xDim, segment_indices, set_frame_array, set_ref, frame_ref, nc_x_ref, ...
     nc_y_ref, master_ind_ref, spot_x_ref, spot_y_ref, set_key, rawPath, proteinChannel, ...
-    sm_kernel, nb_size, refPath, display_figures, min_area, max_area, DropboxFolder, varargin)
+    sm_kernel, nb_size, refPath, displayFigures, min_area, max_area, DropboxFolder, varargin)
 
+maskingMethod = 'kSnakeCircles';
+% maskingMethod = 'gradientOtsuHulls';
+% 
 
 nSets = size(set_key, 1);
 nuclear_mov = cell(1, nSets);
@@ -27,16 +30,10 @@ else
     clear hisMat;       
 end
 
-if display_figures
+if displayFigures
     
     figure('Units', 'normalized', 'Position',[0.6441 0.0744 0.3184 0.3844]);
     tiledlayout('flow', 'TileSpacing', 'none', 'Padding', 'none')
-    nPlots = 3;
-    ax = {};
-    for i = 1:nPlots
-        ax{i} = nexttile;
-    end
-    drawnow;
     
 end
 
@@ -74,113 +71,21 @@ for w = 1:numel(segment_indices)
     
     nuclear_image = nuclear_mov{setID_temp}(:, :, frame_temp);
     
+    yDim = size(nuclear_image, 1);
+    xDim = size(nuclear_image, 2);
+    
+    nc_lin_indices = sub2ind([yDim, xDim],round(nc_y_vec_u),round(nc_x_vec_u));
+
     %% AR Addition- let's just operate on a denoised image from here out
-    
     nuclear_image = wiener2(nuclear_image);
-    
-    %%
-    if display_figures
-        imagescUpdate(ax{1}, nuclear_image, []);  
-        drawnow;
-    end
-    
-    
-%     %% Original Masking Method
-%     protein_smooth = imgaussfilt(nuclear_image,round(sm_kernel/2));
-%     protein_grad = imgradient(protein_smooth);
-%     % flatten background
-%     protein_bkg = imgaussfilt(protein_smooth, round(nb_size/2));
-%     protein_grad_norm = protein_grad ./ protein_bkg;
-%     
-%     
-%     
-%     % try local thresholding
-%     n_x_local = floor(xDim / nb_size);
-%     n_y_local = floor(yDim / nb_size);
-%     x_dim_local = round(xDim / n_x_local);
-%     y_dim_local = round(yDim / n_y_local);
-%     protein_bin_clean = false(size(protein_grad_norm));
-%     for x = 1:n_x_local
-%         for y = 1:n_y_local
-%             x_start = (x-1)*x_dim_local+1;
-%             x_stop = min([x*x_dim_local,xDim]);
-%             y_start = (y-1)*y_dim_local+1;
-%             y_stop = min([y*y_dim_local,yDim]);
-%             pt_section = protein_grad_norm(y_start:y_stop,x_start:x_stop);
-%             thresh = multithresh(pt_section);
-%             section_bin = pt_section > thresh;
-%             section_bin_clean = bwareaopen(section_bin,sm_kernel^2);
-%             % record
-%             protein_bin_clean(y_start:y_stop,x_start:x_stop) = bwmorph(section_bin_clean,'hbreak');
-%         end
-%     end
-%     
-    %% AR MASKING METHOD
-    sigma = 7; b = -.4; s = 0;
-    %assuming the right class is 3 here. sometimes that might be wrong.
-    %it's hard to decide which one is right automatically. 
-    kmask = imsegkmeans(single(imgaussfilt(nuclear_image,sigma)),3)==3;
-    snakesFun = @(b, s, sigma) activecontour(imgaussfilt(nuclear_image, sigma), kmask, 'Chan-Vese', 'ContractionBias', b, 'SmoothFactor', s);
-    kMaskRefined = snakesFun(b, s, sigma/2);
-    %same issue here. sometimes the watershed is inverted. hard to pick
-    %whether it should be or not automatically
-    protein_bin_clean = bwareafilt(wshed(kMaskRefined), [min_area, max_area]);
-    
-    %fit with circles instead of convex hulls
-    protein_bin_clean = fitCirclesToNuclei(protein_bin_clean);
-    
-    
-    %%
-    
-    %%%%%%%%%%%%%diagnostic display
-    if display_figures
-        imagescUpdate(ax{2}, protein_bin_clean, []);
-        drawnow;
-    end
-    %%%%%%%%%%%%%%%%%%%%%
-    
-    
-    % label regions
-%     nc_frame_labels = logical(protein_bin_clean);
-    
-    nc_frame_labels = bwlabel(protein_bin_clean);
-    
-    % frame info
-%     nc_lin_indices = sub2ind(size(protein_bin_clean),round(nc_y_vec_u),round(nc_x_vec_u));
-    % take convex hull
-%     stats = regionprops(nc_frame_labels,'ConvexHull');
-% %         nc_frame_labels = imfill(nc_frame_labels, 'holes');
-%     nc_ref_frame = zeros(size(nc_frame_labels));
-%     maskTotal = zeros(yDim, xDim); %for diagnostics
-    
-%     maskTotal = protein_bin_clean;
-    nc_ref_frame = protein_bin_clean;
-
-       
-%     for j = 1:numel(stats)
-        
-%         hull_points = stats(j).ConvexHull;
-%         mask = poly2mask(hull_points(:,1),hull_points(:,2),yDim,xDim);
-%             
-%             mask = nc_frame_labels == j;
-
-%         mask = bwareafilt(mask, [min_area, max_area]); %throw out small oversegmentation products
-    
-%         maskTotal = maskTotal + mask;
-        
-%         nc_bin_ids = mask(nc_lin_indices);
-%         if sum(nc_bin_ids) == 1 % enforce unique
-%             nc_ref_frame(mask) = nc_master_vec_u(nc_bin_ids);
-%         end
-%     end
-    
-    %%%%%%%%%%%%%diagnostic display
-    if display_figures
-        imagescUpdate(ax{3}, nc_ref_frame, []);
-        drawnow;
-    end
-    %%%%%%%%%%%%%
-    
+            
+    nc_ref_frame = generateNuclearMask(nuclear_image,...
+     'maskingMethod', maskingMethod, 'areaFilter', [min_area, max_area],...
+     'nc_lin_indices', nc_lin_indices, 'nb_size', nb_size,...
+     'sm_kernel', sm_kernel, 'nc_master_vec_u', nc_master_vec_u);
+     
+      if displayFigures, imagescUpdate(nexttile, nuclear_image, []); drawnow; end
+     if displayFigures, imagescUpdate(nexttile, nc_ref_frame, []); drawnow; end
     
     % generate array indicating distance of each pixel from an active locus
     nc_indices = sub2ind(size(nc_ref_frame),spot_y_vec,spot_x_vec);
@@ -188,14 +93,18 @@ for w = 1:numel(segment_indices)
     spot_dist_frame_temp(nc_indices(~isnan(nc_indices))) = 1;
     spot_dist_frame_temp = bwdist(spot_dist_frame_temp);
     
+    if displayFigures, imagescUpdate(nexttile, spot_dist_frame_temp, []); drawnow; end
     
     % label regions within designated integration radius of a spot
     % store arrays
     nucleus_frame_array(:,:,w) = nc_ref_frame;
     spot_frame_array(:,:,w) = spot_dist_frame_temp;
     % save spot and nucleus reference frames
+    
 end
+
 disp('saving segmentation results...')
+
 % save arrays
 for w = 1:numel(segment_indices)
     i = segment_indices(w);

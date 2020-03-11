@@ -2,6 +2,6 @@ function [RawResultsPath, DataPath, FigureRoot] =   header_function(DropboxFolde
 %     RawResultsPath = [DropboxFolder 'LocalEnrichmentResults\'];
     RawResultsPath = [DropboxFolder, filesep];
     DataPath = [DropboxFolder, filesep, 'ProcessedEnrichmentData\' project '\'];
-    FigureRoot = [DropboxFolder, filesep, 'LocalEnrichmentFigures\PipelineOutput\'];
+    FigureRoot = [DropboxFolder, filesep, 'LocalEnrichmentFigures\PipelineOutput'];
 
     mkdir(FigureRoot);

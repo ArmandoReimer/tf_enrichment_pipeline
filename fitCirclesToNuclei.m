@@ -1,4 +1,21 @@
-function cMask = fitCirclesToNuclei(mask)
+function cMask = fitCirclesToNuclei(mask, varargin)
+
+displayFigures = false;
+
+%options must be specified as name, value pairs. unpredictable errors will
+%occur, otherwise.
+for i = 1:2:(numel(varargin)-1)
+    if i ~= numel(varargin)
+        eval([varargin{i} '=varargin{i+1};']);
+    end
+end
+
+if displayFigures
+    
+    figure('Units', 'normalized', 'Position',[0.6441 0.0744 0.3184 0.3844]);
+    tiledlayout('flow', 'TileSpacing', 'none', 'Padding', 'none')
+    
+end
 
 % figure; imagesc(bw);
 xDim = size(mask, 1);
@@ -25,12 +42,12 @@ for i = 1:numel(boundaryCell)
     %[x center y center R]
     [xfit,yfit, Rfit]= circfit(xs,ys);
     
-    xSub = max(round(abs(xfit)), xDim);
-    ySub = max(round(abs(yfit)), yDim);
+    xSub = min(round(abs(xfit)), xDim);
+    ySub = min(round(abs(yfit)), yDim);
     
-    isNearBorder =  borderDist(ySub, xSub) > borderThresh;
+    isFarFromBorder =  borderDist(ySub, xSub) > borderThresh;
     
-    if isNearBorder
+    if isFarFromBorder
         
         ellipseFrame(i, 2) = xfit;
         ellipseFrame(i, 1) = yfit;
