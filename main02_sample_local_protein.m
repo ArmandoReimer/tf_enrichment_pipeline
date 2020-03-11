@@ -46,7 +46,6 @@ sm_kernel_um = 1; % size of gaussian smoothing kernel
 nb_size_um = 10; % determine size of neighborhood to use
 pt_snippet_size_um = 1.5; % set snippet to be 3um in size
 display_figures = false;
-askToOverwrite = true;
 
 
 % rawPath = 'E:\LocalEnrichment\Data\PreProcessedData\';
@@ -270,15 +269,11 @@ for i = 1:size(set_frame_array,1)
     spot_ref_name = [refPath 'spot_roi_frame_set' sprintf('%02d',setID_temp) '_frame' sprintf('%03d',frame_temp) '.mat'];    
     spot_frame_vec(i) = isfile(spot_ref_name);    
 end    
-if all(spot_frame_vec) && segmentNuclei && ~askToOverwrite
+if all(spot_frame_vec) && segmentNuclei   
     warning('previous segmentation results found')
     y = 1;
     n = 0;
-    if askToOverwrite
-        overwrite = input('overwrite segmentation results? (y/n)');
-    else
-        overwrite = 'y';
-    end
+    overwrite = input('overwrite segmentation results? (y/n)');
     segmentNuclei = overwrite;
 elseif ~all(nc_frame_vec) && ~segmentNuclei   
     warning('some or all frames missing nucleus segmentation data. Segmenting missing frames only')
