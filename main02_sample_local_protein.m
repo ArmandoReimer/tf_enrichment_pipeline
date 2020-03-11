@@ -319,11 +319,11 @@ end
 % Protein sampling
 %%%%%%%%%%%%%%%%%%%%%%%%%
 disp('taking protein samples...')
-for embryoIndex = 1:size(setFrameArray,1)
+for jIndex = 1:size(setFrameArray,1)
     
     tic
-    setID = setFrameArray(embryoIndex,1);
-    frame = setFrameArray(embryoIndex,2);
+    setID = setFrameArray(jIndex,1);
+    frame = setFrameArray(jIndex,2);
     
     
     % load spot and nucleus reference frames
@@ -379,70 +379,22 @@ for embryoIndex = 1:size(setFrameArray,1)
     protein_stack = load_stacks(rawPath, source, frame, proteinChannel, xDim, yDim, zDim);
     
    
-    % initialize arrays to store relevant info
-    for spotIndex = 1:numel(newVectorFields)
-        eval([newVectorFields{spotIndex} ' = NaN(size(spot_x_vec));']);
-    end
-    for spotIndex = 1:numel(newSnippetFields)
-        eval([newSnippetFields{spotIndex} ' = NaN(2*proteinSnippetSize_px+1,2*proteinSnippetSize_px+1,numel(spot_x_vec));']);
-    end
+   
    
     
-[qc_mat, spot_edge_dist_vec] = main02subfunction(nucleusXVector, nucleusYVector, spot_x_vec, spot_y_vec, spot_z_vec,...
+[qualityControlStructure, nucleus_struct] = main02subfunction(nucleusXVector, nucleusYVector, spot_x_vec, spot_y_vec, spot_z_vec,...
     spot_x_vec3D, spot_y_vec3D, spot_z_vec3D, proteinQualityControlVector, nc_ref_frame, nucleusMasterVector,...
     display_figures, protein_stack, mcp_stack,spotRoiFrame,...
     xReferenceMesh,yReferenceMesh,zReferenceMesh,xy_sigma_px,z_sigma_px,...
     proteinSnippetSize_px,nucleusDistanceFrame, minSampleSeparation_px,...
     roiRadiusSpot_px, nucleus_struct, nc_lin_index_vec,  nc_sub_index_vec, minEdgeSeparation_px,...
     driftTolerance,PixelSize_um, setID, frame, particle_id_vec, neighborhoodSize_px, yDim, xDim, minArea_px, maxArea_px,...
-    mf_samp_rad, spot_dist_frame);
+    mf_samp_rad, spot_dist_frame, newSnippetFields, newVectorFields,DataPath, write_snip_flag, jIndex);
 
-       
-    qualityControlStructure(embryoIndex).qc_mat = fliplr(qc_mat);
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % save snip data
-    nNuclei = numel(nucleusMasterVector);
-    % initialize struct to store snip data
-    snip_data = struct;
-    % map data back to nucleus_struct
-    for spotIndex = 1:nNuclei
-        nc_index = nc_lin_index_vec(spotIndex);
-        nc_sub_index = nc_sub_index_vec(spotIndex);
-        frame = nucleus_struct(nc_index).frames(nc_sub_index);
-        for k = 1:numel(newVectorFields)
-            vec = eval(newVectorFields{k});
-            nucleus_struct(nc_index).(newVectorFields{k})(nc_sub_index) = vec(spotIndex);
-        end
-        % store snips
-        for k = 1:numel(newSnippetFields)
-            snip = eval([newSnippetFields{k} '(:,:,spotIndex)']);
-            snip_data.(newSnippetFields{k})(:,:,spotIndex) = snip;
-        end
-    end
-    
-    % store key ID variables
-    snip_data.frame = frame;
-    snip_data.setID = setID;
-    snip_data.particle_id_vec = particle_id_vec;
-    snip_data.spot_edge_dist_vec = spot_edge_dist_vec;
-    % indexing vectors
-    snip_data.nc_sub_index_vec = nc_sub_index_vec;
-    snip_data.nc_lin_index_vec = nc_lin_index_vec;
-    snip_data.nc_master_vec = nucleusMasterVector;
-    % specify name
-    % read snip file
-    snip_name = ['snip_data_F' sprintf('%03d',frame) '_S' sprintf('%02d',setID)];
-    if write_snip_flag
-        blank = struct;
-        save([DataPath 'snip_data.mat'],'blank','-v7.3')
-        snip_file = matfile([DataPath 'snip_data.mat'],'Writable',true);
-        snip_file.(snip_name)= snip_data;
-        clear snip_file;
-    end
-    
+      
     % report time
     t = round(toc);
-    disp([num2str(embryoIndex) ' of ' num2str(size(setFrameArray,1)) ' frames completed (' num2str(t) ' sec)'])
+    disp([num2str(jIndex) ' of ' num2str(size(setFrameArray,1)) ' frames completed (' num2str(t) ' sec)'])
 end
 
 

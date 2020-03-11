@@ -4,7 +4,7 @@ function segmentNuclei_main02(yDim, xDim, segment_indices, set_frame_array, set_
 
 maskingMethod = 'kSnakeCircles';
 % maskingMethod = 'gradientOtsuHulls';
-% 
+%
 
 nSets = size(set_key, 1);
 nuclear_mov = cell(1, nSets);
@@ -14,7 +14,7 @@ if ~isempty(varargin)
     nuclear_mov = varargin{1};
     
 else
-
+    
     for set = 1:nSets
         prefix = cell2mat(set_key{set, 2});
         hisPath = [rawPath, prefix, filesep, prefix, '_hisMat.mat'];
@@ -27,7 +27,7 @@ else
         end
         nuclear_mov{set} = double(hisMat); % {set(t y x)}
     end
-    clear hisMat;       
+    clear hisMat;
 end
 
 if displayFigures
@@ -75,17 +75,17 @@ for w = 1:numel(segment_indices)
     xDim = size(nuclear_image, 2);
     
     nc_lin_indices = sub2ind([yDim, xDim],round(nc_y_vec_u),round(nc_x_vec_u));
-
+    
     %% AR Addition- let's just operate on a denoised image from here out
     nuclear_image = wiener2(nuclear_image);
-            
+    
     nc_ref_frame = generateNuclearMask(nuclear_image,...
-     'maskingMethod', maskingMethod, 'areaFilter', [min_area, max_area],...
-     'nc_lin_indices', nc_lin_indices, 'nb_size', nb_size,...
-     'sm_kernel', sm_kernel, 'nc_master_vec_u', nc_master_vec_u);
-     
-      if displayFigures, imagescUpdate(nexttile, nuclear_image, []); drawnow; end
-     if displayFigures, imagescUpdate(nexttile, nc_ref_frame, []); drawnow; end
+        'maskingMethod', maskingMethod, 'areaFilter', [min_area, max_area],...
+        'nc_lin_indices', nc_lin_indices, 'nb_size', nb_size,...
+        'sm_kernel', sm_kernel, 'nc_master_vec_u', nc_master_vec_u);
+    
+    if displayFigures, imagescUpdate(nexttile, nuclear_image, []); drawnow; end
+    if displayFigures, imagescUpdate(nexttile, nc_ref_frame, []); drawnow; end
     
     % generate array indicating distance of each pixel from an active locus
     nc_indices = sub2ind(size(nc_ref_frame),spot_y_vec,spot_x_vec);

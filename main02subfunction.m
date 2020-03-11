@@ -1,13 +1,28 @@
-function [qc_mat, spot_edge_dist_vec] = main02subfunction(nucleusXVector, nucleusYVector, spot_x_vec, spot_y_vec, spot_z_vec,...
-    spot_x_vec3D, spot_y_vec3D, spot_z_vec3D, proteinQualityControlVector, nc_ref_frame, nucleusMasterVector,...
+function [qualityControlStructure, nucleus_struct] =...
+...   
+main02subfunction(nucleusXVector, nucleusYVector, spot_x_vec, spot_y_vec, spot_z_vec,...
+...    
+spot_x_vec3D, spot_y_vec3D, spot_z_vec3D, proteinQualityControlVector, nc_ref_frame, nucleusMasterVector,...
 display_figures, protein_stack, mcp_stack,spotRoiFrame,...
     xReferenceMesh,yReferenceMesh,zReferenceMesh,xy_sigma_px,z_sigma_px,...
     proteinSnippetSize_px, nucleusDistanceFrame, minSampleSeparation_px,...
     roiRadiusSpot_px, nucleus_struct, nc_lin_index_vec,  nc_sub_index_vec, minEdgeSeparation_px,...
     driftTolerance,PixelSize_um, setID, frame, particle_id_vec,...
-    neighborhoodSize_px, yDim, xDim, minArea_px, maxArea_px, mf_samp_rad, spot_dist_frame)
+    neighborhoodSize_px, yDim, xDim, minArea_px, maxArea_px,...
+    mf_samp_rad, spot_dist_frame,  newSnippetFields, newVectorFields, DataPath, write_snip_flag, jIndex)
 
 nNuclei = numel(nucleusXVector);
+qc_mat = struct; 
+
+
+ % initialize arrays to store relevant info
+    for spotIndex = 1:numel(newVectorFields)
+        eval([newVectorFields{spotIndex} ' = NaN(size(spot_x_vec));']);
+    end
+    for spotIndex = 1:numel(newSnippetFields)
+        eval([newSnippetFields{spotIndex} ' = NaN(2*proteinSnippetSize_px+1,2*proteinSnippetSize_px+1,numel(spot_x_vec));']);
+    end
+    
 
  % generate lookup table of inter-nucleus distances
     xInterNuclearDistanceMatrix = repmat(nucleusXVector,nNuclei,1)-repmat(nucleusXVector',1,nNuclei);
@@ -54,7 +69,7 @@ nNuclei = numel(nucleusXVector);
         % volume protein sampling
         spot_protein_vec_3d(spotIndex) = sample_protein_3D(x_spot3D,y_spot3D,z_spot3D,...
             xReferenceMesh,yReferenceMesh,zReferenceMesh,xy_sigma_px,z_sigma_px,protein_stack);
-        % make sure size is reasonable and that spot is inside nucleus
+        % make sure size is reasonable and that spot is inside nucleusiter
         if sum(spot_nc_mask(:)) < minArea_px || sum(spot_nc_mask(:)) > maxArea_px || ~spot_nc_mask(y_spot,x_spot) %|| int_it==0
             edge_qc_flag_vec(spotIndex) = -1;
             serial_qc_flag_vec(spotIndex) = -1;
@@ -270,6 +285,54 @@ nNuclei = numel(nucleusXVector);
         qc_mat(q).edge_dist_snip = edge_dist_mat(y_range,x_range);
         
     end
+    
+    qualityControlStructure(jIndex).qc_mat = fliplr(qc_mat);
+
     %%
+    
+       % save snip data
+    nNuclei = numel(nucleusMasterVector);
+    % initialize struct to store snip data
+    snip_data = struct;
+    % map data back to nucleus_struct
+    for indo = 1:nNuclei
+        nc_index = nc_lin_index_vec(indo);
+        nc_sub_index = nc_sub_index_vec(indo);
+        frame = nucleus_struct(nc_index).frames(nc_sub_index);
+        for k = 1:numel(newVectorFields)
+            vec = eval(newVectorFields{k});
+            nucleus_struct(nc_index).(newVectorFields{k})(nc_sub_index) = vec(indo);
+        end
+        % store snips
+        for k = 1:numel(newSnippetFields)
+            snip = eval([newSnippetFields{k} '(:,:,indo)']);
+            snip_data.(newSnippetFields{k})(:,:,indo) = snip;
+        end
+    end
+    
+     
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+ 
+    
+    % store key ID variables
+    snip_data.frame = frame;
+    snip_data.setID = setID;
+    snip_data.particle_id_vec = particle_id_vec;
+    snip_data.spot_edge_dist_vec = spot_edge_dist_vec;
+    % indexing vectors
+    snip_data.nc_sub_index_vec = nc_sub_index_vec;
+    snip_data.nc_lin_index_vec = nc_lin_index_vec;
+    snip_data.nc_master_vec = nucleusMasterVector;
+    % specify name
+    % read snip file
+    snip_name = ['snip_data_F' sprintf('%03d',frame) '_S' sprintf('%02d',setID)];
+    if write_snip_flag
+        blank = struct;
+        save([DataPath 'snip_data.mat'],'blank','-v7.3')
+        snip_file = matfile([DataPath 'snip_data.mat'],'Writable',true);
+        snip_file.(snip_name)= snip_data;
+        clear snip_file;
+    end
+    
     
 end
