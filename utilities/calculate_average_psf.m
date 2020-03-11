@@ -8,11 +8,22 @@ addpath('./utilities')
 % rawPath = 'E:\LocalEnrichment\Data\PreProcessedData\';
 pth = getDorsalFolders;
 rawPath = [pth, filesep, 'PreProcessedData\'];
-% sampling parameters
-n_spots = 1000;
+
+% 
+% [xSize, ySize, pixelSize, zStep, snippet_size,...
+%     nFrames, nSlices, nDigits] = getFrameInfoParams(FrameInfo)
+% 
+% [~,~,~,~, ~, ~, ~, ~,Channel1,Channel2,~,Channel3, ~, ~, ~] = readMovieDatabase(src); 
+% Channels = {Channel1{1},Channel2{1}, Channel3{1}};
+% mcp_channel= find(contains(Channels, 'spot', 'IgnoreCase', true)| contains(Channels, 'mcp', 'IgnoreCase', true) | contains(Channels, 'pcp', 'IgnoreCase', true)) ;
+
 mcp_channel = 2;
-xy_snip_size = 25;
-z_stack_size = 5;
+
+% sampling parameters
+ 
+n_spots = 1000;
+xy_snip_size = 25; %px
+z_stack_size = 5; %px
 xy_sigma_checks = [1 4];
 z_sigma_checks = [1 4];
 

@@ -23,7 +23,7 @@ for i = 1:(numel(varargin)-1)
     end    
 end
 
-mkdir(FigPath)
+mkdir(FigPath) 
 paperFigPath = [FigPath '_paper_figures/'];
 mkdir(paperFigPath);
 
@@ -73,10 +73,12 @@ snip_size = size(spot_protein_snips,1);
 [y_ref, x_ref] = meshgrid(1:snip_size,1:snip_size);
 r_ref = sqrt((x_ref - ceil(snip_size/2)).^2 + (y_ref - ceil(snip_size/2)).^2)*PixelSize;
 
+%%
+%AR CHANGE
 spot_protein_vec = [nucleus_struct_protein.spot_protein_vec];
 null_protein_vec = [nucleus_struct_protein.edge_null_protein_vec];
 dist_vec = [nucleus_struct_protein.spot_edge_dist_vec]*PixelSize; %distance of each spot from center pixel in microns
-
+%%
 % First look for presence of edge artifact
 dist_sigma = 0.1; %(um)
 protein_delta_vec =  spot_protein_vec - null_protein_vec;

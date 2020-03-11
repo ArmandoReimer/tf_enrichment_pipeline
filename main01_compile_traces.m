@@ -397,7 +397,7 @@ save(nucleus_name ,'nucleus_struct')
 
 if calculatePSF
     disp('calculating psf dims...')
-    calculate_average_psf(project,DropboxFolder);
+    calculate_average_psf(project,DropboxFolder, 'FrameInfo', FrameInfo);
 end
 
 disp('done.')

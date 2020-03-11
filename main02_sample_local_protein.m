@@ -26,6 +26,9 @@
 
 function nucleus_struct_protein = main02_sample_local_protein(project,DropboxFolder,varargin)
 
+warning('off', 'MATLAB:MKDIR:DirectoryExists');
+
+
 addpath('./utilities')
 ROIRadiusSpot = .2; % radius (um) of region used to query and compare TF concentrations
 minSampleSepUm = 1.5; %um
@@ -62,6 +65,23 @@ for i = 1:(numel(varargin)-1)
     end    
 end
 
+
+if display_figures
+    
+    figure('Units', 'normalized', 'Position', [0.6441 0.5922 0.3175 0.3033]);
+    tiledlayout('flow', 'TileSpacing', 'none', 'Padding', 'none')
+    clrmp = 'hsv';
+    colormap(clrmp);
+    nPlots = 2;
+    ax = {};
+    for i = 1:nPlots
+        ax{i} = nexttile;
+    end
+    drawnow;
+    
+end
+
+
 % Load trace data
 load([DataPath '/nucleus_struct.mat'],'nucleus_struct')
 load([DataPath '/psf_dims.mat'],'psf_dims')
@@ -72,8 +92,30 @@ mkdir(refPath)
 mkdir(snipPath)
 
 % get MCP channel
-options = [1 2];
-mcp_channel = options(options~=proteinChannel);
+% options = [1 2];
+% mcp_channel = options(options~=proteinChannel);
+nSets = size(set_key, 1);
+for set = 1:nSets
+        src = cell2mat(set_key{set, 2});
+[~,~,~,~, ~, ~, ~, ~,Channel1,Channel2,~,Channel3, ~, ~, ~] = readMovieDatabase(src); 
+Channels = {Channel1{1},Channel2{1}, Channel3{1}};
+protein_channels(set) = find(contains(Channels, 'input', 'IgnoreCase', true));
+mcp_channels(set)= find(contains(Channels, 'spot', 'IgnoreCase', true)| contains(Channels, 'mcp', 'IgnoreCase', true) | contains(Channels, 'pcp', 'IgnoreCase', true)) ;
+% 
+% movieFiles{set} = [rawPath, src, filesep, src, '_movieMat.mat'];
+%     if exist(movieFiles{set}, 'file')
+%         movieMat = loadMovieMat(movieFiles{set});
+%         mcpMovie{set} = movieMat(:, :, :, :, mcp_channels{set});
+%         proteinMovie{set} = movieMat(:, :, :, :, protein_channels{set});
+%         clear movieMat;
+%     end
+% end
+end
+
+
+
+
+
 write_snip_flag = false;
 %%%%%%%%%%%%%%%%%%%%%%%%%
 % remove all frames that do not contain a segmented particle or that
@@ -114,6 +156,7 @@ else
     spot_y_ref3D = [nucleus_struct.yPosParticle];
     spot_z_ref3D = [nucleus_struct.zPosParticle];
 end
+% spot_z_ref = spot_z_ref3D;
 
 set_ref = [];
 master_ind_ref = [];
@@ -240,10 +283,29 @@ end
 
 if segmentNuclei
     
+    nSets = size(set_key, 1);
+    nuclear_mov = cell(1, nSets);
+
+    for set = 1:nSets
+        prefix = cell2mat(set_key{set, 2});
+        hisPath = [rawPath, prefix, filesep, prefix, '_hisMat.mat'];
+        if exist(hisPath, 'file')
+            %         load(hisPath, 'hisMat'); % t y x set
+            hisMat = loadHisMat(hisPath);
+        else
+            load([DropboxFolder, filesep, prefix, filesep, 'FrameInfo.mat'], 'FrameInfo')
+            nWorkers = 1; [~, hisMat, ~, ~, ~] = makeMovieMats(prefix, rawPath, nWorkers, FrameInfo);
+        end
+        nuclear_mov{set} = double(hisMat); % {set(t y x)}
+    end
+    clear hisMat;
+    
    segmentNuclei_main02(yDim, xDim, segment_indices, set_frame_array, set_ref, frame_ref, nc_x_ref, ...
     nc_y_ref, master_ind_ref, spot_x_ref, spot_y_ref, set_key, rawPath, proteinChannel, ...
-    sm_kernel, nb_size, refPath, display_figures, min_area, max_area, DropboxFolder)
+    sm_kernel, nb_size, refPath, display_figures, min_area, max_area, DropboxFolder, nuclear_mov)
 
+    clear nuclear_mov;
+    
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%
@@ -261,8 +323,8 @@ for i = 1:size(set_frame_array,1)
     
     %%%%%%%%%%%%%diagnostic figure
     if display_figures
-        figure(6)
-        imagesc(nc_ref_frame);
+        imagescUpdate(ax{1}, nc_ref_frame, []);
+        drawnow;
     end
     %%%%%%%%%%%%%%%%%%%%
     nc_dist_frame = bwdist(~nc_ref_frame);    
@@ -292,14 +354,13 @@ for i = 1:size(set_frame_array,1)
 
     
     %determine protein channel
-    [~,~,~,~, ~, ~, ~, ~,Channel1,Channel2,~,Channel3, ~, ~, ~] = readMovieDatabase(src); 
-    Channels = {Channel1{1},Channel2{1}, Channel3{1}};
-    proteinChannel = find(contains(Channels, 'input', 'IgnoreCase', true));
-    mcp_channel = find(contains(Channels, 'spot', 'IgnoreCase', true)| contains(Channels, 'mcp', 'IgnoreCase', true) | contains(Channels, 'pcp', 'IgnoreCase', true)) ;
-    
+    mcp_channel = mcp_channels(setID);
+    proteinChannel = protein_channels(setID);
     % load stacks    
-    mcp_stack = load_stacks(rawPath, src, frame, mcp_channel);
-    protein_stack = load_stacks(rawPath, src, frame, proteinChannel);    
+   
+        mcp_stack = load_stacks(rawPath, src, frame, mcp_channel, xDim, yDim, zDim);
+        protein_stack = load_stacks(rawPath, src, frame, proteinChannel, xDim, yDim, zDim);    
+        
     % generate lookup table of inter-nucleus distances
     x_dist_mat = repmat(nc_x_vec,numel(nc_x_vec),1)-repmat(nc_x_vec',1,numel(nc_x_vec));
     y_dist_mat = repmat(nc_y_vec,numel(nc_y_vec),1)-repmat(nc_y_vec',1,numel(nc_y_vec));
@@ -321,7 +382,7 @@ for i = 1:size(set_frame_array,1)
         y_nucleus = round(nc_y_vec(j));   
         x_spot = round(spot_x_vec(j));
         y_spot = round(spot_y_vec(j));       
-        z_spot = round(spot_z_vec(j))-1; % NL: why?
+        z_spot = round(spot_z_vec(j))-1;
         % get position info from 3D fit
         x_spot3D = spot_x_vec3D(j);
         y_spot3D = spot_y_vec3D(j);
@@ -335,8 +396,8 @@ for i = 1:size(set_frame_array,1)
         
         %%%%%%%%%%%%% debugging display
         if display_figures
-            figure(7)
-            imagesc(spot_nc_mask);
+            imagescUpdate(ax{2}, spot_nc_mask, []);
+            drawnow;
         end
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%
         
@@ -581,11 +642,11 @@ for i = 1:size(set_frame_array,1)
     if write_snip_flag            
         blank = struct;
         save([DataPath 'snip_data.mat'],'blank','-v7.3')    
-        write_snip_flag = true;
+        snip_file = matfile([DataPath 'snip_data.mat'],'Writable',true);    
+        snip_file.(snip_name)= snip_data;        
+        clear snip_file; 
     end
-    snip_file = matfile([DataPath 'snip_data.mat'],'Writable',true);    
-    snip_file.(snip_name)= snip_data;        
-    clear snip_file;    
+     
     % report time
     t = round(toc);
     disp([num2str(i) ' of ' num2str(size(set_frame_array,1)) ' frames completed (' num2str(t) ' sec)'])         
