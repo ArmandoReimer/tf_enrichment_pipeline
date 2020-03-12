@@ -16,11 +16,11 @@ qc_mat = struct;
 
 
  % initialize arrays to store relevant info
-    for spotIndex = 1:numel(newVectorFields)
-        eval([newVectorFields{spotIndex} ' = NaN(size(spot_x_vec));']);
+    for i = 1:numel(newVectorFields)
+        eval([newVectorFields{i} ' = NaN(size(spot_x_vec));']);
     end
-    for spotIndex = 1:numel(newSnippetFields)
-        eval([newSnippetFields{spotIndex} ' = NaN(2*proteinSnippetSize_px+1,2*proteinSnippetSize_px+1,numel(spot_x_vec));']);
+    for j = 1:numel(newSnippetFields)
+        eval([newSnippetFields{j} ' = NaN(2*proteinSnippetSize_px+1,2*proteinSnippetSize_px+1,numel(spot_x_vec));']);
     end
     
 
@@ -69,12 +69,20 @@ qc_mat = struct;
         % volume protein sampling
         spot_protein_vec_3d(spotIndex) = sample_protein_3D(x_spot3D,y_spot3D,z_spot3D,...
             xReferenceMesh,yReferenceMesh,zReferenceMesh,xy_sigma_px,z_sigma_px,protein_stack);
-        % make sure size is reasonable and that spot is inside nucleusiter
-        if sum(spot_nc_mask(:)) < minArea_px || sum(spot_nc_mask(:)) > maxArea_px || ~spot_nc_mask(y_spot,x_spot) %|| int_it==0
+        
+        
+        % make sure size is reasonable and that spot is inside nucleus
+        %beware- continue ahead
+        isTooSmall = sum(spot_nc_mask(:)) < minArea_px;
+        isTooBig = sum(spot_nc_mask(:)) > maxArea_px;
+        isOutsideNucleus = ~spot_nc_mask(y_spot,x_spot);
+        
+        if isTooBig || isTooBig || isOutsideNucleus%|| int_it==0
             edge_qc_flag_vec(spotIndex) = -1;
             serial_qc_flag_vec(spotIndex) = -1;
             continue
         end
+    
         
         % sample snippets
         spot_protein_snips(:,:,spotIndex) = sample_snip(x_spot,y_spot,proteinSnippetSize_px,protein_frame,spot_nc_mask);

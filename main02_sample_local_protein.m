@@ -232,8 +232,8 @@ newSnippetFields = {'spot_protein_snips', 'edge_null_protein_snips',...
 % Initialize fields
 for i = 1:numel(nucleus_struct)
     reference = nucleus_struct(i).xPos;
-    for spotIndex = 1:numel(newVectorFields)
-        nucleus_struct(i).(newVectorFields{spotIndex}) = NaN(size(reference));
+    for k = 1:numel(newVectorFields)
+        nucleus_struct(i).(newVectorFields{k}) = NaN(size(reference));
     end
 end
 

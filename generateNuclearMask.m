@@ -8,7 +8,7 @@ xDim = size(nuclearImage, 2);
 areaFilter = [0, Inf];
 nb_size = [];
 sm_kernel  = [];
-nc_lin_indices = [];
+nc_lin_indices = []; %indices for nuclear centroids from Ellipses.mat
 nc_master_vec_u = [];
 
 
@@ -42,8 +42,22 @@ switch maskingMethod
         nuclearMask = bwareafilt(wshed(kMaskRefined), areaFilter);
         
         %fit with circles instead of convex hulls
-        nuclearMask = fitCirclesToNuclei(nuclearMask);
+        protein_bin_clean = fitCirclesToNuclei(nuclearMask);
         
+        lab = bwlabel(protein_bin_clean);
+        
+        nuclearMask = zeros(yDim, xDim);
+        for j = 1:max(lab(:))
+                        
+            mask = lab==j;
+            
+            nc_bin_ids = mask(nc_lin_indices);
+            if sum(nc_bin_ids) == 1 % enforce unique
+                nuclearMask(mask) = nc_master_vec_u(nc_bin_ids);
+            end
+            
+        end
+            
     case 'gradientOtsuHulls'
         
         %% Original Masking Method
@@ -74,7 +88,6 @@ switch maskingMethod
             end
         end
         
-        
         stats = regionprops(~~protein_bin_clean,'ConvexHull');
         nRegions = numel(stats);
         
@@ -86,8 +99,7 @@ switch maskingMethod
             mask = poly2mask(hull_points(:,1),hull_points(:,2),yDim,xDim);
             
             mask = bwareafilt(mask, areaFilter); %throw out small oversegmentation products
-            
-            maskTotal = maskTotal + mask;
+
             
             nc_bin_ids = mask(nc_lin_indices);
             if sum(nc_bin_ids) == 1 % enforce unique
