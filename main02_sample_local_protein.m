@@ -1,4 +1,4 @@
-% main02_sample_local_protein(project, rawPath, proteinChannel, varargin)
+% main02_sample_local_protein(project, dropboxfolder, varargin)
 %
 % DESCRIPTION
 % Script to generate samples of local protein contentration at active gene
@@ -7,10 +7,7 @@
 % ARGUMENTS
 % project: master ID variable
 %
-% rawPath: Full or relative path to PreProcessed folder (pr
-%               equivalent)
 %
-% proteinChannel: Integer corresponding to protein channel
 %
 % OPTIONS
 % dropboxFolder: Path to data folder where you wish to save
@@ -26,36 +23,35 @@
 
 function nucleus_struct_protein = main02_sample_local_protein(project,DropboxFolder,varargin)
 
+
 warning('off', 'MATLAB:MKDIR:DirectoryExists');
-
-
 addpath('./utilities')
+
+
+
 ROIRadiusSpot = .2; % radius (um) of region used to query and compare TF concentrations
 minSampleSepUm = 1.5; %um
 mf_samp_rad = 0.8; % distance (um) from nucleus center to include in sample
 minEdgeSepUm = .5; %um
-shouldSegmentNuclei = 0;
-maskingMethod = 'gradientOtsuHulls';
-% PSF info for 3D sampling
-use_psf_fit_dims = false; % if true, use fits from PSF fitting
 xy_sigma_um = 0.25;% um
 z_sigma_um = 0.6; % um
-ignoreQC = false;
 min_rad_um = 2; % set min and max acceptable area for nucleus segmentation
 max_rad_um = 4; %this needs to be 6um for nc12. 4um for nc14
 sm_kernel_um = 1; % size of gaussian smoothing kernel
 nb_size_um = 10; % determine size of neighborhood to use
 pt_snippet_size_um = 1.5; % set snippet to be 3um in size
+
 display_figures = false;
 askToOverwrite = true;
+write_snip_flag = false;
+ignoreQC = false;
+shouldSegmentNuclei = false;
+maskingMethod = 'gradientOtsuHulls';
+use_psf_fit_dims = false; % if true, use fits from PSF fitting
 
-% rawPath = 'E:\LocalEnrichment\Data\PreProcessedData\';
+
 pth = getDorsalFolders;
 rawPath = [pth, filesep, 'PreProcessedData\'];
-
-proteinChannel = 1;
-
-
 [~, DataPath, ~] =   header_function(DropboxFolder, project);
 
 for i = 1:(numel(varargin)-1)
@@ -71,14 +67,6 @@ if display_figures
     
     figure('Units', 'normalized', 'Position', [0.6441 0.5922 0.3175 0.3033]);
     tiledlayout('flow', 'TileSpacing', 'none', 'Padding', 'none')
-    clrmp = 'hsv';
-    colormap(clrmp);
-%     nPlots = 3;
-%     ax = {};
-%     for i = 1:nPlots
-%         ax{i} = nexttile;
-%     end
-%     drawnow;
     
 end
 
@@ -92,9 +80,7 @@ refPath = [DataPath '/refFrames/'];
 mkdir(refPath)
 mkdir(snipPath)
 
-% get MCP channel
-% options = [1 2];
-% mcp_channel = options(options~=proteinChannel);
+
 nSets = size(set_key, 1);
 for set = 1:nSets
     source = cell2mat(set_key{set, 2});
@@ -102,27 +88,9 @@ for set = 1:nSets
     Channels = {Channel1{1},Channel2{1}, Channel3{1}};
     protein_channels(set) = find(contains(Channels, 'input', 'IgnoreCase', true));
     mcp_channels(set)= find(contains(Channels, 'spot', 'IgnoreCase', true)| contains(Channels, 'mcp', 'IgnoreCase', true) | contains(Channels, 'pcp', 'IgnoreCase', true)) ;
-    %
-    % movieFiles{set} = [rawPath, src, filesep, src, '_movieMat.mat'];
-    %     if exist(movieFiles{set}, 'file')
-    %         movieMat = loadMovieMat(movieFiles{set});
-    %         mcpMovie{set} = movieMat(:, :, :, :, mcp_channels{set});
-    %         proteinMovie{set} = movieMat(:, :, :, :, protein_channels{set});
-    %         clear movieMat;
-    %     end
-    % end
 end
 
-
-
-
-
-write_snip_flag = false;
-%%%%%%%%%%%%%%%%%%%%%%%%%
-% remove all frames that do not contain a segmented particle or that
-
 threeD_flag = nucleus_struct(1).threeD_flag;
-% threeD_flag = false;
 % remove entries with no particle
 nucleus_struct = nucleus_struct(~isnan([nucleus_struct.ParticleID]));
 
@@ -157,7 +125,6 @@ else
     spotYReference3D = [nucleus_struct.yPosParticle];
     spotZReference3D = [nucleus_struct.zPosParticle];
 end
-% spot_z_ref = spot_z_ref3D;
 
 setReference = [];
 masterIndexReference = [];
@@ -195,18 +162,11 @@ proteinSnippetSize_px = round(pt_snippet_size_um ./ PixelSize_um);
 % set min separation between control and locus to 2um
 minSampleSeparation_px = round(minSampleSepUm ./ PixelSize_um);
 minEdgeSeparation_px = round(minEdgeSepUm ./ PixelSize_um);
-
-% calculate ROI size in pixels for spot and control
 roiRadiusSpot_px = round(ROIRadiusSpot ./ PixelSize_um);
 
 % calculate average frame-over-frame particle drift from data
-linearDifferenceVector = diff(linearIndexReference);
-xDifferenceVector = diff(spotXReference);
-yDifferenceVector = diff(spotYReference);
-displacementVector = sqrt(xDifferenceVector.^2+yDifferenceVector.^2);
-displacementVector = displacementVector(linearDifferenceVector==0);
-% sets sigma of movement for virtual spot
-driftTolerance = nanmedian(displacementVector)*PixelSize_um;
+driftTolerance = computeDriftTolerance(...
+    linearIndexReference, PixelSize_um, spotXReference, spotYReference);
 
 % set dims for 3D protein sampling
 if use_psf_fit_dims
@@ -217,25 +177,11 @@ else
     z_sigma_px = round(z_sigma_um/zStep_um,1); % pixels
 end
 
-%%%%%%%%%%%%%%%%%%%%%%%
-% Designate fields to be added to nucleus structure
-newVectorFields = {'spot_protein_vec_3d','spot_protein_vec', 'serial_null_protein_vec',...
-    'serial_null_protein_vec_3d','edge_null_protein_vec','edge_null_protein_vec_3d','mf_null_protein_vec',...
-    'spot_mcp_vec','edge_mcp_protein_vec','serial_qc_flag_vec','edge_qc_flag_vec', ...
-    'edge_null_x_vec', 'serial_null_x_vec','serial_null_y_vec','edge_null_y_vec', 'edge_null_nc_vec',...
-    'spot_edge_dist_vec','serial_null_edge_dist_vec'};
 
+[nucleus_struct, newVectorFields, ...
+    newSnippetFields] =...
+    initializeNucleusStructFields(nucleus_struct);
 
-newSnippetFields = {'spot_protein_snips', 'edge_null_protein_snips',...
-    'spot_mcp_snips','edge_null_mcp_snips'};
-
-% Initialize fields
-for i = 1:numel(nucleus_struct)
-    reference = nucleus_struct(i).xPos;
-    for k = 1:numel(newVectorFields)
-        nucleus_struct(i).(newVectorFields{k}) = NaN(size(reference));
-    end
-end
 
 %%%%%%%%%%%%%%%%%%%%%%
 %%% make source key
@@ -305,10 +251,10 @@ if shouldSegmentNuclei
     end
     clear hisMat;
     
-    segmentNuclei_main02(yDim, xDim, segment_indices, setFrameArray, setReference, frameReference, nucleusXReference, ...
-        nucleusYReference, masterIndexReference, spotXReference, spotYReference, set_key, rawPath, proteinChannel, ...
+    segmentNuclei_main02(nucleus_struct, segment_indices, setFrameArray, setReference, frameReference, nucleusXReference, ...
+        nucleusYReference, masterIndexReference, spotXReference, spotYReference, set_key, rawPath,...
         smoothingKernel_px, neighborhoodSize_px, refPath,...
-        display_figures, minArea_px, maxArea_px, DropboxFolder,...
+        display_figures, minArea_px, maxArea_px, DropboxFolder, maskingMethod,...
         nuclear_mov)
     
     clear nuclear_mov;
@@ -331,10 +277,10 @@ for jIndex = 1:size(setFrameArray,1)
     load(nucleusReferenceFile,'nc_ref_frame');
     if display_figures, imagescUpdate(nexttile, nc_ref_frame, []); drawnow; end
     
-  
+    
     nucleusDistanceFrame = bwdist(~nc_ref_frame);
     if display_figures, imagescUpdate(nexttile, nucleusDistanceFrame, []); drawnow; end
-
+    
     %generated by segmentNuclei_main02.
     %this is the distance of each pixel from
     %active locus
@@ -367,31 +313,20 @@ for jIndex = 1:size(setFrameArray,1)
     spot_y_vec3D = spotYReference3D(frameSetFilter);
     spot_z_vec3D = spotZReference3D(frameSetFilter);
     particle_id_vec = proteinReference(frameSetFilter);
-    source = set_key(set_key.setID==setID,:).prefix{1};
     
     
-    %determine protein channel
-    mcp_channel = mcp_channels(setID);
-    proteinChannel = protein_channels(setID);
-    % load stacks
+    [qualityControlStructure, nucleus_struct] = main02subfunction(rawPath, set_key, nucleusXVector,...
+        nucleusYVector, spot_x_vec, spot_y_vec, spot_z_vec,...
+        spot_x_vec3D, spot_y_vec3D, spot_z_vec3D, proteinQualityControlVector, nc_ref_frame, nucleusMasterVector,...
+        display_figures,spotRoiFrame,...
+        xReferenceMesh,yReferenceMesh,zReferenceMesh,xy_sigma_px,z_sigma_px,...
+        proteinSnippetSize_px,nucleusDistanceFrame, minSampleSeparation_px,...
+        roiRadiusSpot_px, nucleus_struct, nc_lin_index_vec,  nc_sub_index_vec, minEdgeSeparation_px,...
+        driftTolerance,PixelSize_um, setID, frame, particle_id_vec, neighborhoodSize_px, minArea_px, maxArea_px,...
+        mf_samp_rad, spot_dist_frame, newSnippetFields, newVectorFields,DataPath, write_snip_flag, jIndex);
     
-    mcp_stack = load_stacks(rawPath, source, frame, mcp_channel, xDim, yDim, zDim);
-    protein_stack = load_stacks(rawPath, source, frame, proteinChannel, xDim, yDim, zDim);
     
-   
-   
-   
     
-[qualityControlStructure, nucleus_struct] = main02subfunction(nucleusXVector, nucleusYVector, spot_x_vec, spot_y_vec, spot_z_vec,...
-    spot_x_vec3D, spot_y_vec3D, spot_z_vec3D, proteinQualityControlVector, nc_ref_frame, nucleusMasterVector,...
-    display_figures, protein_stack, mcp_stack,spotRoiFrame,...
-    xReferenceMesh,yReferenceMesh,zReferenceMesh,xy_sigma_px,z_sigma_px,...
-    proteinSnippetSize_px,nucleusDistanceFrame, minSampleSeparation_px,...
-    roiRadiusSpot_px, nucleus_struct, nc_lin_index_vec,  nc_sub_index_vec, minEdgeSeparation_px,...
-    driftTolerance,PixelSize_um, setID, frame, particle_id_vec, neighborhoodSize_px, yDim, xDim, minArea_px, maxArea_px,...
-    mf_samp_rad, spot_dist_frame, newSnippetFields, newVectorFields,DataPath, write_snip_flag, jIndex);
-
-      
     % report time
     t = round(toc);
     disp([num2str(jIndex) ' of ' num2str(size(setFrameArray,1)) ' frames completed (' num2str(t) ' sec)'])
@@ -439,3 +374,46 @@ disp('saving nucleus structure...')
 nucleus_struct_protein = nucleus_struct;
 save([DataPath 'qc_ref_struct.mat'],'qc_ref_struct')
 save([DataPath 'nucleus_struct_protein.mat'],'nucleus_struct_protein','-v7.3')
+
+
+end
+
+
+function driftTolerance = computeDriftTolerance(...
+    linearIndexReference, PixelSize_um, spotXReference, spotYReference)
+
+% calculate average frame-over-frame particle drift from data
+linearDifferenceVector = diff(linearIndexReference);
+xDifferenceVector = diff(spotXReference);
+yDifferenceVector = diff(spotYReference);
+displacementVector = sqrt(xDifferenceVector.^2+yDifferenceVector.^2);
+displacementVector = displacementVector(linearDifferenceVector==0);
+% sets sigma of movement for virtual spot
+driftTolerance = nanmedian(displacementVector)*PixelSize_um;
+
+end
+
+
+function [nucleus_struct, newVectorFields, ...
+    newSnippetFields] =...
+    initializeNucleusStructFields(nucleus_struct)
+
+% Designate fields to be added to nucleus structure
+newVectorFields = {'spot_protein_vec_3d','spot_protein_vec', 'serial_null_protein_vec',...
+    'serial_null_protein_vec_3d','edge_null_protein_vec','edge_null_protein_vec_3d','mf_null_protein_vec',...
+    'spot_mcp_vec','edge_mcp_protein_vec','serial_qc_flag_vec','edge_qc_flag_vec', ...
+    'edge_null_x_vec', 'serial_null_x_vec','serial_null_y_vec','edge_null_y_vec', 'edge_null_nc_vec',...
+    'spot_edge_dist_vec','serial_null_edge_dist_vec'};
+
+newSnippetFields = {'spot_protein_snips', 'edge_null_protein_snips',...
+    'spot_mcp_snips','edge_null_mcp_snips'};
+
+% Initialize fields
+for i = 1:numel(nucleus_struct)
+    reference = nucleus_struct(i).xPos;
+    for k = 1:numel(newVectorFields)
+        nucleus_struct(i).(newVectorFields{k}) = NaN(size(reference));
+    end
+end
+
+end

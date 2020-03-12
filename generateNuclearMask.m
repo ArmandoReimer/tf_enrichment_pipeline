@@ -2,7 +2,6 @@ function nuclearMask = generateNuclearMask(nuclearImage, varargin)
 
 maskingMethod = 'gradientOtsuHulls';
 displayFigures = false;
-nuclearMask = nuclearImage;
 yDim = size(nuclearImage, 1);
 xDim = size(nuclearImage, 2);
 areaFilter = [0, Inf];
@@ -92,7 +91,6 @@ switch maskingMethod
         nRegions = numel(stats);
         
         nuclearMask = zeros(yDim, xDim);
-        maskTotal = zeros(yDim, xDim); %for diagnostics
         for j = 1:nRegions
             
             hull_points = stats(j).ConvexHull;

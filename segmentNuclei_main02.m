@@ -1,10 +1,9 @@
-function segmentNuclei_main02(yDim, xDim, segment_indices, set_frame_array, set_ref, frame_ref, nc_x_ref, ...
-    nc_y_ref, master_ind_ref, spot_x_ref, spot_y_ref, set_key, rawPath, proteinChannel, ...
-    sm_kernel, nb_size, refPath, displayFigures, min_area, max_area, DropboxFolder, varargin)
+function segmentNuclei_main02(nucleus_struct, segment_indices, set_frame_array, set_ref, frame_ref, nc_x_ref, ...
+    nc_y_ref, master_ind_ref, spot_x_ref, spot_y_ref, set_key, rawPath, ...
+    sm_kernel, nb_size, refPath, displayFigures, min_area, max_area, DropboxFolder, maskingMethod, varargin)
 
-maskingMethod = 'kSnakeCircles';
-% maskingMethod = 'gradientOtsuHulls';
-%
+xDim = nucleus_struct(1).xDim;
+yDim = nucleus_struct(1).yDim;
 
 nSets = size(set_key, 1);
 nuclear_mov = cell(1, nSets);
