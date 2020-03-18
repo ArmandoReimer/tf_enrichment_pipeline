@@ -1,6 +1,7 @@
-function cMask = fitCirclesToNuclei(mask, varargin)
+function [cMask, ellipseFrameWithEdges] = fitCirclesToNuclei(mask, varargin)
 
 displayFigures = false;
+image = [];
 
 %options must be specified as name, value pairs. unpredictable errors will
 %occur, otherwise.
@@ -32,6 +33,7 @@ borderDist = bwdist(border);
 edgeMask = false(xDim, yDim);
 
 ellipseFrame = zeros(numel(boundaryCell), 3);
+edgeEllipseFrame = [];
 
 for i = 1:numel(boundaryCell)
     %     hold on
@@ -55,6 +57,10 @@ for i = 1:numel(boundaryCell)
         
     else
         
+        edgeEllipseFrame(i, 2) = xfit;
+        edgeEllipseFrame(i, 1) = yfit;
+        edgeEllipseFrame(i, 3) = Rfit;
+        
         reg = stats(i).Image;
         %         figure(87); imagesc(reg);
         reg = reg(:);
@@ -75,6 +81,8 @@ for i = 1:numel(boundaryCell)
 end
 
 cMask = makeNuclearMask(ellipseFrame, [size(mask, 1), size(mask, 2)], 'radiusScale', 1);
+
+ellipseFrameWithEdges = cat(1, ellipseFrame, edgeEllipseFrame);
 
 cMask = cMask + edgeMask;
 % figure; imshowpair(bw, cMask, 'montage');

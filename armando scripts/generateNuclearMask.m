@@ -21,10 +21,8 @@ for i = 1:2:(numel(varargin)-1)
 end
 
 if displayFigures
-    
     figure('Units', 'normalized', 'Position',[0.6441 0.0744 0.3184 0.3844]);
     tiledlayout('flow', 'TileSpacing', 'none', 'Padding', 'none')
-    
 end
 
 switch maskingMethod
