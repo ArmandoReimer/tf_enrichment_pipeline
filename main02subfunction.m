@@ -9,7 +9,7 @@ function [qualityControlStructure, nucleus_struct] =...
     roiRadiusSpot_px, nucleus_struct, nc_lin_index_vec,  nc_sub_index_vec, minEdgeSeparation_px,...
     driftTolerance,PixelSize_um, setID, frame, particle_id_vec,...
     neighborhoodSize_px, minArea_px, maxArea_px,...
-    mf_samp_rad, spot_dist_frame,  newSnippetFields, newVectorFields, DataPath, write_snip_flag, jIndex)
+    mf_samp_rad, spot_dist_frame,  newSnippetFields, newVectorFields, DataPath, write_snip_flag, jIndex, use3DSpotCentroids)
 
 xDim = nucleus_struct(1).xDim;
 yDim = nucleus_struct(1).yDim;
@@ -64,9 +64,14 @@ for spotIndex = 1:nNuclei
     
     %%%%%%%%%%%%%%%%%%%%%% Sample protein levels %%%%%%%%%%%%%%%%%%%%%%
     % get frames
-    protein_frame = protein_stack(:,:,z_spot);
+    if use3DSpotCentroids
+        spotZIndex = round(z_spot3D);
+    else
+        spotZIndex = z_spot;
+    end
+    protein_frame = protein_stack(:,:,spotZIndex);
     if display_figures, imagescUpdate(nexttile, protein_frame, []); drawnow; end
-    mcp_frame = mcp_stack(:,:,z_spot);
+    mcp_frame = mcp_stack(:,:,spotZIndex);
     if display_figures, imagescUpdate(nexttile, mcp_frame, []); drawnow; end
     int_id = spotRoiFrame(y_spot,x_spot);
     

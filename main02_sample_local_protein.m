@@ -48,7 +48,7 @@ ignoreQC = false;
 shouldSegmentNuclei = false;
 maskingMethod = 'gradientOtsuHulls';
 use_psf_fit_dims = false; % if true, use fits from PSF fitting
-
+use3DSpotCentroids = true;
 
 pth = getDorsalFolders;
 rawPath = [pth, filesep, 'PreProcessedData\'];
@@ -323,7 +323,7 @@ for jIndex = 1:size(setFrameArray,1)
         proteinSnippetSize_px,nucleusDistanceFrame, minSampleSeparation_px,...
         roiRadiusSpot_px, nucleus_struct, nc_lin_index_vec,  nc_sub_index_vec, minEdgeSeparation_px,...
         driftTolerance,PixelSize_um, setID, frame, particle_id_vec, neighborhoodSize_px, minArea_px, maxArea_px,...
-        mf_samp_rad, spot_dist_frame, newSnippetFields, newVectorFields,DataPath, write_snip_flag, jIndex);
+        mf_samp_rad, spot_dist_frame, newSnippetFields, newVectorFields,DataPath, write_snip_flag, jIndex, use3DSpotCentroids);
     
     
     

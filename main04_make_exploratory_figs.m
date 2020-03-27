@@ -1,17 +1,21 @@
 % Script conduct locus enrichment analyses
 function main04_make_exploratory_figs(project,DropboxFolder, protein_string, gene_string,varargin)
 
-close all
 addpath('utilities')
+
+
 DistLim = 0.8; % min distance from edge permitted (um)
 NBoots = 100;%00; % number of bootstrap samples to use for estimating SE
-ManualDistThreshold = 0;
 Colormap_plot = jet(128); %specifies the colomap used to make plots/graphs
 Colormap_heat = viridis(128); %specifies the colormap used to make heatmaps
 relEnrich_ub = 1.3; %upper bound of relative enrichment for consistency
 relEnrich_lb = 0.85; %lower bound of relative enrichment for consistency
 relEnrichHeatMap_ub = 1.2;
 relEnrichHeatMap_lb = 1;
+use3DSpotCentroids = true;
+ManualDistThreshold = 0;
+
+
 [~, DataPath, FigureRoot] =   header_function(DropboxFolder, project);
 FigPath = [FigureRoot '\' project '\'];
 
@@ -73,11 +77,19 @@ snip_size = size(spot_protein_snips,1);
 [y_ref, x_ref] = meshgrid(1:snip_size,1:snip_size);
 r_ref = sqrt((x_ref - ceil(snip_size/2)).^2 + (y_ref - ceil(snip_size/2)).^2)*PixelSize;
 
+
+
 %%
-%AR CHANGE
-spot_protein_vec = [nucleus_struct_protein.spot_protein_vec];
-null_protein_vec = [nucleus_struct_protein.edge_null_protein_vec];
+if use3DSpotCentroids
+    spot_protein_vec = [nucleus_struct_protein.spot_protein_vec_3d];
+    null_protein_vec = [nucleus_struct_protein.edge_null_protein_vec_3d];
+else
+    spot_protein_vec = [nucleus_struct_protein.spot_protein_vec];
+    null_protein_vec = [nucleus_struct_protein.edge_null_protein_vec];
+end
 dist_vec = [nucleus_struct_protein.spot_edge_dist_vec]*PixelSize; %distance of each spot from center pixel in microns
+
+
 %%
 % First look for presence of edge artifact
 dist_sigma = 0.1; %(um)
@@ -221,11 +233,16 @@ absDiff_protein_snip_mean = (spot_protein_snip_mean) - null_protein_snip_mean;
 % disp(['Total additional protein (au) at locus (sum of all pixels of absolute different between spot and null snips)' num2str(sumEnrichedProtein)])
 % caxis([lb ub])
 ub = prctile(absDiff_protein_snip_mean(:),99);
+% lb = median(absDiff_protein_snip_mean(:));
 lb = prctile(absDiff_protein_snip_mean(:),1);
+
+% ub = 0.06;
+% lb = 0;
+
 absDiff_protein_snip_mean_title = ['Absolute Difference ' protein_name '-' protein_fluor ' Enrichment at Active ' gene_name ' Locus'];
 absDiff_protein_snip_mean_clabel = [protein_name '-' protein_fluor ' absolute enrichment (au)'];
 absDiff_protein_snip_heatmap = makeHeatmapPlots(absDiff_protein_snip_mean,...
-    visibleOn, absDiff_protein_snip_mean_title, absDiff_protein_snip_mean_clabel,Colormap_heat,PixelSize,0,0.06);
+    visibleOn, absDiff_protein_snip_mean_title, absDiff_protein_snip_mean_clabel,Colormap_heat,PixelSize,lb, ub);
 
 saveas(absDiff_protein_snip_heatmap,[FigPath write_string '_mean_pt_snippet_absDiff' '.png']);
 saveas(absDiff_protein_snip_heatmap, [paperFigPath write_string '_mean_pt_snippet_absDiff' '.pdf']);
