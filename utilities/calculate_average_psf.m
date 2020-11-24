@@ -106,10 +106,12 @@ for i = sampling_order
     spot_y_vec = spot_y_ref(frame_set_filter);        
     spot_z_vec = spot_z_ref(frame_set_filter);      
     src = set_key(set_key.setID==setID,:).prefix{1};
-    
+    liveExperiment = LiveExperiment(src);
     % load stacks
-    mcp_stack = load_stacks(rawPath, src, frame, mcp_channel);
+%     mcp_stack = load_stacks(rawPath, src, frame, mcp_channel);
+    mcp_stack = getMovieFrame(liveExperiment, frame, mcp_channel);
     if isempty(mcp_stack)
+        warning('missing raw images');
         continue
     end
     for j = 1:numel(spot_x_vec)

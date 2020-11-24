@@ -28,7 +28,7 @@ function nucleus_struct = main01_compile_traces(DropboxTab,DropboxFolder,varargi
 
 addpath('./utilities')
 % set defaults
-firstNC = 14;
+firstNC = 12;
 minDP = 15;
 pctSparsity = 50;
 two_spot_flag = contains(DropboxTab, '2spot');
@@ -58,7 +58,7 @@ if isempty(sheet_index)
 end
 % [~,~,sheet_cell] = xlsread(sheet_path,sheet_index);
 sheet_cell = readcell(sheet_path,'Sheet',DropboxTab);
-name_col = sheet_cell(1:33,1); % hard coded for now
+name_col = sheet_cell(1:end,1); % hard coded for now
 ready_ft = contains(name_col,'ReadyForEnrichment');
 ready_cols = 1 + find([sheet_cell{ready_ft,2:end}]==1);
 sheet_cell = sheet_cell(:,[1 ready_cols]);
