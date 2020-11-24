@@ -240,13 +240,15 @@ if shouldSegmentNuclei
     for set = 1:nSets
         prefix = cell2mat(set_key{set, 2});
         hisPath = [rawPath, prefix, filesep, prefix, '_hisMat.mat'];
-        if exist(hisPath, 'file')
-            %         load(hisPath, 'hisMat'); % t y x set
-            hisMat = loadHisMat(hisPath);
-        else
-            load([DropboxFolder, filesep, prefix, filesep, 'FrameInfo.mat'], 'FrameInfo')
-            nWorkers = 1; [~, hisMat, ~, ~, ~] = makeMovieMats(prefix, rawPath, nWorkers, FrameInfo);
-        end
+%         if exist(hisPath, 'file')
+%             %         load(hisPath, 'hisMat'); % t y x set
+%             hisMat = loadHisMat(hisPath);
+%         else
+%             load([DropboxFolder, filesep, prefix, filesep, 'FrameInfo.mat'], 'FrameInfo')
+%             nWorkers = 1;
+%             getHisMovie(LiveExperiment(prefix))
+%         end
+         hisMat =  getHisMat(LiveExperiment(prefix));
         nuclear_mov{set} = double(hisMat); % {set(t y x)}
     end
     clear hisMat;
@@ -323,7 +325,8 @@ for jIndex = 1:size(setFrameArray,1)
         proteinSnippetSize_px,nucleusDistanceFrame, minSampleSeparation_px,...
         roiRadiusSpot_px, nucleus_struct, nc_lin_index_vec,  nc_sub_index_vec, minEdgeSeparation_px,...
         driftTolerance,PixelSize_um, setID, frame, particle_id_vec, neighborhoodSize_px, minArea_px, maxArea_px,...
-        mf_samp_rad, spot_dist_frame, newSnippetFields, newVectorFields,DataPath, write_snip_flag, jIndex, use3DSpotCentroids);
+        mf_samp_rad, spot_dist_frame, newSnippetFields,...
+        newVectorFields,DataPath, write_snip_flag, jIndex, use3DSpotCentroids, mcp_channels, protein_channels);
     
     
     

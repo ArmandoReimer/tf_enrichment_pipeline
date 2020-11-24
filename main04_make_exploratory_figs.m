@@ -61,10 +61,12 @@ spot_mcp_snips = [];
 null_mcp_snips = [];
 for s = 2:numel(snip_list)
     eval(['snip_data = ' snip_list{s} ';'])
-    spot_protein_snips = cat(3,spot_protein_snips,snip_data.spot_protein_snips);
-    spot_mcp_snips = cat(3,spot_mcp_snips,snip_data.spot_mcp_snips);
-    null_protein_snips = cat(3,null_protein_snips,snip_data.edge_null_protein_snips);
-    null_mcp_snips = cat(3,null_mcp_snips,snip_data.edge_null_mcp_snips);
+    if contains(snip_list{s}, 'snip')
+        spot_protein_snips = cat(3,spot_protein_snips,snip_data.spot_protein_snips);
+        spot_mcp_snips = cat(3,spot_mcp_snips,snip_data.spot_mcp_snips);
+        null_protein_snips = cat(3,null_protein_snips,snip_data.edge_null_protein_snips);
+        null_mcp_snips = cat(3,null_mcp_snips,snip_data.edge_null_mcp_snips);
+    end
 end
 % spot_protein_snips = cat(3,nucleus_struct_protein.spot_protein_snips);
 % null_protein_snips = cat(3,nucleus_struct_protein.edge_null_protein_snips);

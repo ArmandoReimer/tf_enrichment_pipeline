@@ -9,16 +9,20 @@ function [qualityControlStructure, nucleus_struct] =...
     roiRadiusSpot_px, nucleus_struct, nc_lin_index_vec,  nc_sub_index_vec, minEdgeSeparation_px,...
     driftTolerance,PixelSize_um, setID, frame, particle_id_vec,...
     neighborhoodSize_px, minArea_px, maxArea_px,...
-    mf_samp_rad, spot_dist_frame,  newSnippetFields, newVectorFields, DataPath, write_snip_flag, jIndex, use3DSpotCentroids)
+    mf_samp_rad, spot_dist_frame,  newSnippetFields, newVectorFields, DataPath, write_snip_flag,...
+    jIndex, use3DSpotCentroids, mcp_channels, protein_channels)
 
 xDim = nucleus_struct(1).xDim;
 yDim = nucleus_struct(1).yDim;
 zDim = nucleus_struct(1).zDim;
 
 source = set_key(set_key.setID==setID,:).prefix{1};
+liveExperiment = LiveExperiment(source);
+% mcp_stack = load_stacks(rawPath, source, frame, mcp_channels(setID), xDim, yDim, zDim);
+mcp_stack = getMovieFrame(liveExperiment, frame, mcp_channels(setID));
+protein_stack = getMovieFrame(liveExperiment, frame, protein_channels(setID));
 
-mcp_stack = load_stacks(rawPath, source, frame, mcp_channels(setID), xDim, yDim, zDim);
-protein_stack = load_stacks(rawPath, source, frame, protein_channels(setID), xDim, yDim, zDim);
+% protein_stack = load_stacks(rawPath, source, frame, protein_channels(setID), xDim, yDim, zDim);
 
 nNuclei = numel(nucleusXVector);
 qc_mat = struct;
